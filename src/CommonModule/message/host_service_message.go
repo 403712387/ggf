@@ -7,17 +7,17 @@ import (
 )
 
 // 获取host服务的信息，包括开机时间，git信息
-type HostServiceMessage struct {
+type GgfServiceMessage struct {
 	BaseMessageInfo
 }
 
 // 生成消息
-func NewHostServiceMessage(pri common.Priority, tra TransType) (msg *HostServiceMessage) {
+func NewGgfServiceMessage(pri common.Priority, tra TransType) (msg *GgfServiceMessage) {
 	MessageId++
-	return &HostServiceMessage{BaseMessageInfo: BaseMessageInfo{id: MessageId, priority: pri, trans: tra, birthday: time.Now()}}
+	return &GgfServiceMessage{BaseMessageInfo: BaseMessageInfo{id: MessageId, priority: pri, trans: tra, birthday: time.Now()}}
 }
 
-func (h *HostServiceMessage) String() string {
+func (h *GgfServiceMessage) String() string {
 	return h.BaseMessageInfo.String()
 }
 
@@ -30,7 +30,7 @@ type HostServiceResponse struct {
 	GitCommitID   string    // git commit id信息
 }
 
-func NewHostServiceResponse(host, system time.Time, gitBranch, gitCommit string, msg BaseMessage) (rsp *HostServiceResponse) {
+func NewGgfServiceResponse(host, system time.Time, gitBranch, gitCommit string, msg BaseMessage) (rsp *HostServiceResponse) {
 	rsp = &HostServiceResponse{BaseResponseInfo: BaseResponseInfo{message: msg}, HostStartup: host, SystemStartup: system, GitBranch: gitBranch, GitCommitID: gitCommit}
 	return rsp
 }

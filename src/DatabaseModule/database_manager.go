@@ -25,8 +25,8 @@ type DatabaseManager struct {
 	databaseDir      string // 数据库存放的目录
 	databaseName     string // 数据库的名称
 
-	db     *sql.DB         // 操作数据库的句柄
-	dbLock sync.Mutex      // 不能并行操作
+	db     *sql.DB    // 操作数据库的句柄
+	dbLock sync.Mutex // 不能并行操作
 
 	cpuStatistic []message.BaseMessage // cpu使用统计
 	cpuLock      sync.Mutex
@@ -48,7 +48,7 @@ type DatabaseManager struct {
 func (d *DatabaseManager) Init() {
 	logrus.Infof("begin %s module uninit", d.ModuleName)
 	d.databaseDir = "./database/"
-	d.databaseName = "host.db"
+	d.databaseName = "ggf.db"
 	d.initDatabase()
 	go d.checkDatabaseLoop()
 	logrus.Infof("end %s module uninit", d.ModuleName)

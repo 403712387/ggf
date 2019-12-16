@@ -11,7 +11,7 @@ type StopHostServiceMessage struct {
 }
 
 // 生成消息
-func NewStopHostServiceMessage(pri common.Priority, tra TransType) (msg *StopHostServiceMessage) {
+func NewStopGgfServiceMessage(pri common.Priority, tra TransType) (msg *StopHostServiceMessage) {
 	MessageId++
 	return &StopHostServiceMessage{BaseMessageInfo: BaseMessageInfo{id: MessageId, priority: pri, trans: tra, birthday: time.Now()}}
 }

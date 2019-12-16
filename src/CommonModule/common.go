@@ -64,11 +64,11 @@ func (s *ServiceInfo) String() string {
 }
 
 // 主机服务
-type HostServiceInfo struct {
+type GgfServiceInfo struct {
 	ServiceInfo
 }
 
-func (o *HostServiceInfo) String() string {
+func (o *GgfServiceInfo) String() string {
 	return fmt.Sprintf("%s", o.ServiceInfo.String())
 }
 

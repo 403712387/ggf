@@ -70,7 +70,7 @@ func (n *NetworkManager) processConfigureMessage(msg message.BaseMessage) (rsp m
 	http := HttpService{Network: n}
 
 	// 获取http配置信息
-	info := conf.HostService().ServiceInfo
+	info := conf.GgfService().ServiceInfo
 
 	// 启动http服务
 	go http.Startup(&info)
@@ -123,9 +123,9 @@ func (n *NetworkManager) updateNtpConfigure(ntp common.NTPInfo, operate common.N
 	return
 }
 
-// 停止主机服务
-func (n *NetworkManager) stopHostService() {
-	stopMsg := message.NewStopHostServiceMessage(common.Priority_Fifth, message.Trans_Async)
+// 停止ggf服务
+func (n *NetworkManager) stopGgfService() {
+	stopMsg := message.NewStopGgfServiceMessage(common.Priority_Fifth, message.Trans_Async)
 	n.SendMessage(stopMsg)
 }
 
@@ -163,20 +163,20 @@ func (n *NetworkManager) getServiceLog(service string, begin, end int64) (beginI
 	return
 }
 
-// 获取host service的信息
-func (n *NetworkManager) getHostServiceInfo() (host, system time.Time, gitBranch, gitCommit string, err error) {
+// 获取ggf service的信息
+func (n *NetworkManager) getGgfServiceInfo() (host, system time.Time, gitBranch, gitCommit string, err error) {
 
 	// 发送消息
-	msg := message.NewHostServiceMessage(common.Priority_First, message.Trans_Sync)
+	msg := message.NewGgfServiceMessage(common.Priority_First, message.Trans_Sync)
 	rsp, err := n.SendMessage(msg)
 
 	// 解析回应
 	if err == nil {
-		hostRsp := rsp.(*message.HostServiceResponse)
-		host = hostRsp.HostStartup
-		system = hostRsp.SystemStartup
-		gitBranch = hostRsp.GitBranch
-		gitCommit = hostRsp.GitCommitID
+		ggfRsp := rsp.(*message.HostServiceResponse)
+		host = ggfRsp.HostStartup
+		system = ggfRsp.SystemStartup
+		gitBranch = ggfRsp.GitBranch
+		gitCommit = ggfRsp.GitCommitID
 	}
 
 	return

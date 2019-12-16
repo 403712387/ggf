@@ -4,7 +4,7 @@ import (
 	"ConfigureModule"
 	"CoreModule"
 	"DatabaseModule"
-	"HostServiceModule"
+	"GgfServiceModule"
 	"NetworkModule"
 	"NtpModule"
 	"ResourceModule"
@@ -48,7 +48,7 @@ func main() {
 	database := DatabaseModule.DatabaseManager{MessageList: core.MessageList{MessageRoute: &msgRoute, ModuleName: "DatabaseManager"}}                  // 数据库交互的模块
 	ntp := NtpModule.NtpManager{MessageList: core.MessageList{MessageRoute: &msgRoute, ModuleName: "NtpManager"}}                                      // 此模块是负责服务组件信息的获取
 	resource := ResourceModule.ResourceManager{MessageList: core.MessageList{MessageRoute: &msgRoute, ModuleName: "ResourceManager"}}                  //  获取资源使用情况
-	host := HostServiceModule.HostServiceManager{MessageList: core.MessageList{MessageRoute: &msgRoute, ModuleName: "HostServiceManager"}}
+	ggf := GgfServiceModule.GgfServiceManager{MessageList: core.MessageList{MessageRoute: &msgRoute, ModuleName: "HostServiceManager"}}
 
 	// 初始化处理模块（注意，这个地方如果不初始化的话，会收不到异步消息）
 	conf.Process = &conf
@@ -56,7 +56,7 @@ func main() {
 	database.Process = &database
 	ntp.Process = &ntp
 	resource.Process = &resource
-	host.Process = &host
+	ggf.Process = &ggf
 
 	// 模块添加到消息路由中
 	msgRoute.AddProcess(&conf)
@@ -64,7 +64,7 @@ func main() {
 	msgRoute.AddProcess(&database)
 	msgRoute.AddProcess(&ntp)
 	msgRoute.AddProcess(&resource)
-	msgRoute.AddProcess(&host)
+	msgRoute.AddProcess(&ggf)
 
 	// 启动程序
 	msgRoute.Beginwork()

@@ -56,14 +56,11 @@ func (h *HttpService) Startup(info *common.ServiceInfo) error {
 
 // 设置 http handle
 func (h *HttpService) handle() {
-	http.HandleFunc("/host/", h.processHttp)
-	http.HandleFunc("/html/", h.html)
-	http.HandleFunc("/", h.other)
+	http.HandleFunc("/", h.processHttp)
 }
 
 // 处理http请求
 func (h *HttpService) processHttp(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// 记录请求
 	h.recordEvent(w, req)
@@ -94,7 +91,7 @@ func (h *HttpService) processHttp(w http.ResponseWriter, req *http.Request) {
 	case "/update/time": // 修改本机时间
 		response = h.updateTime(&body)
 	case "/service/info": // 获取ggf服务的信息
-		response = h.hostServiceInfo(&body)
+		response = h.ggfServiceInfo(&body)
 	case "/get/cpu/statistic": // 获取cpu的使用情况
 		response = h.getCpuStatistic(&body)
 	case "/get/disk/statistic": // 获取磁盘的使用情况
@@ -117,7 +114,7 @@ func (h *HttpService) processHttp(w http.ResponseWriter, req *http.Request) {
 
 // 处理index
 func (h *HttpService) index(body *string) []byte {
-	return []byte("Welcome to host service, I am queen!!!")
+	return []byte("Welcome to ggf service, I am queen!!!")
 }
 
 // 处理除了html,host的其他
@@ -224,10 +221,10 @@ func (h *HttpService) updateTime(body *string) []byte {
 }
 
 // 获取host服务的信息
-func (h *HttpService) hostServiceInfo(body *string) (data []byte) {
+func (h *HttpService) ggfServiceInfo(body *string) (data []byte) {
 
 	// 获取主机服务的信息
-	hostStartup, systemStartup, gitBranch, gitCommit, err := h.Network.getHostServiceInfo()
+	hostStartup, systemStartup, gitBranch, gitCommit, err := h.Network.getGgfServiceInfo()
 	if err == nil {
 		rsp := struct {
 			Startup struct {

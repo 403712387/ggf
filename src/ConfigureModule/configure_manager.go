@@ -22,12 +22,12 @@ type ConfigureManager struct {
 
 // json配置
 type ConfigureJson struct {
-	HostService GgfServiceJson `json:"ggf_service"` // host name
-	NtpServer   common.NTPInfo `json:"ntp_server"`
+	GgfService GgfServiceJson `json:"ggf_service"` // ggf name
+	NtpServer  common.NTPInfo `json:"ntp_server"`
 }
 
 func (c *ConfigureJson) String() string {
-	return fmt.Sprintf("host service info:%s", c.HostService.String())
+	return fmt.Sprintf("ggf service info:%s", c.GgfService.String())
 }
 
 type GgfServiceJson struct {
@@ -71,8 +71,8 @@ func (c *ConfigureManager) BeginWork() {
 	logrus.Infof("get configure successful, info:%s", c.configure.String())
 
 	// 发送配置消息
-	hostServiceInfo := common.HostServiceInfo{ServiceInfo: common.ServiceInfo{HttpPort: c.configure.HostService.HttpPort}}
-	configMessage := message.NewConfigureMessage(hostServiceInfo, common.Priority_First, message.Trans_Sync)
+	ggfServiceInfo := common.GgfServiceInfo{ServiceInfo: common.ServiceInfo{HttpPort: c.configure.GgfService.HttpPort}}
+	configMessage := message.NewConfigureMessage(ggfServiceInfo, common.Priority_First, message.Trans_Sync)
 	c.SendMessage(configMessage)
 
 	// 发送ntp消息
