@@ -1,32 +1,10 @@
 package DatabaseModule
 
 import (
-	"CommonModule"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"time"
 )
-
-// 加载用户信息
-func loadUserInfo(d *DatabaseManager) (user common.UserInfo, err error) {
-	d.dbLock.Lock()
-	defer d.dbLock.Unlock()
-
-	sql := fmt.Sprintf("select name, password from %s", "User")
-	rows, err := d.db.Query(sql)
-	if err == nil {
-		defer rows.Close()
-		for rows.Next() {
-			rows.Scan(&user.User, &user.Password)
-			return
-		}
-		err = fmt.Errorf("not query user info")
-		return
-	} else {
-		logrus.Errorf("load user info fail, reason:%s", err.Error())
-	}
-	return
-}
 
 // 获取所有的表
 func getAllTables(d *DatabaseManager) (tables []string) {
@@ -58,27 +36,6 @@ func removeTables(d *DatabaseManager, tables []string) (err error) {
 		d.db.Exec(sql)
 		logrus.Infof("remove table:%s, sql:%s", table, sql)
 	}
-	return
-}
-
-// 修改密码
-func changePassword(d *DatabaseManager, user common.ChangePassword) (err error) {
-	d.dbLock.Lock()
-	defer d.dbLock.Unlock()
-
-	// 根据用户名更新密码
-	sql := fmt.Sprintf("update %s set password = '%s' where name = '%s'", "User", user.NewPassword, user.User)
-	result, err := d.db.Exec(sql)
-
-	// 更新内存中的用户名和密码
-	if err != nil {
-		logrus.Fatalf("change password fail, error reason:%s", err.Error())
-	}
-	count, err := result.RowsAffected()
-	if count <= 0 {
-		err = fmt.Errorf("update password fail")
-	}
-
 	return
 }
 

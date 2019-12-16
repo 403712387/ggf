@@ -4,7 +4,6 @@ import (
 	"CommonModule"
 	"CommonModule/message"
 	"CoreModule"
-	"crypto/md5"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -28,7 +27,6 @@ type DatabaseManager struct {
 
 	db     *sql.DB         // 操作数据库的句柄
 	dbLock sync.Mutex      // 不能并行操作
-	user   common.UserInfo // 用户信息
 
 	cpuStatistic []message.BaseMessage // cpu使用统计
 	cpuLock      sync.Mutex
@@ -53,7 +51,6 @@ func (d *DatabaseManager) Init() {
 	d.databaseName = "host.db"
 	d.initDatabase()
 	go d.checkDatabaseLoop()
-	d.loadDatabase()
 	logrus.Infof("end %s module uninit", d.ModuleName)
 }
 
@@ -83,10 +80,6 @@ func (d *DatabaseManager) OnForeseeMessage(msg message.BaseMessage) (done bool) 
 // 处理消息
 func (d *DatabaseManager) OnProcessMessage(msg message.BaseMessage) (rsp message.BaseResponse, err error) {
 	switch msg.(type) {
-	case *message.UserVerifyMessage: // 用户校验
-		return d.processUserCheckMessage(msg)
-	case *message.ChangePasswordMessage: // 修改密码
-		return d.processChangePasswordMessage(msg)
 	case *message.CPUStatisticMessage: // 统计CPU的使用情况
 		return d.processCPUStatisticMessage(msg)
 	case *message.DiskStatisticMessage: // 统计磁盘的使用情况
@@ -107,8 +100,6 @@ func (d *DatabaseManager) OnProcessMessage(msg message.BaseMessage) (rsp message
 		return d.processGetNetworkStatisticMessage(msg)
 	case *message.GetMemoryStatisticMessage: // 获取内存使用情况
 		return d.processGetMemoryStatisticMessage(msg)
-	case *message.GetServiceStatisticMessage: // 获取服务组件资源使用情况
-		return d.processGetServiceStatisticMessage(msg)
 	}
 	return nil, nil
 }
@@ -177,17 +168,8 @@ func (d *DatabaseManager) checkDatabaseLoop() {
 
 // 创建数据表
 func (d *DatabaseManager) createTables() (err error) {
-	err = d.createUserTable()
-	if err != nil {
-		logrus.Errorf("create user table fail, error reason:%s", err.Error())
-	}
 
 	now := time.Now().Format("20060102")
-	err = d.createScheduleTaskTable(now)
-	if err != nil {
-		logrus.Errorf("create schedule task table fail, error reason:%s", err.Error())
-	}
-
 	err = d.createEventTable(now)
 	if err != nil {
 		logrus.Errorf("create event table fail, error reason:%s", err.Error())
@@ -198,53 +180,6 @@ func (d *DatabaseManager) createTables() (err error) {
 		logrus.Errorf("create system resource table fail, error reason:%s", err.Error())
 	}
 
-	return
-}
-
-// 创建用户表
-func (d *DatabaseManager) createUserTable() (err error) {
-	d.dbLock.Lock()
-	defer d.dbLock.Unlock()
-
-	// 创建表
-	statement := `CREATE TABLE IF NOT EXISTS User(
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			createTime VARCHAR(64) NULL,
-			name VARCHAR(256) NULL,
-			password VARCHAR(256) NULL
-			);`
-	_, err = d.db.Exec(statement)
-	if err != nil {
-		return
-	}
-
-	// 添加用户
-	pwd := fmt.Sprintf("%x", md5.Sum([]byte("admin@123456")))
-	now := time.Now().Format("2006-01-02 15:04:05.000")
-	statement = fmt.Sprintf("insert into [User]([createTime], [name], [password]) select '%s', 'admin', '%s' where not exists (select * from [User] where [name]='admin');", now, pwd)
-	_, err = d.db.Exec(statement)
-	if err != nil {
-		logrus.Errorf("create table User fail, error:%s", err.Error())
-	}
-	return
-}
-
-// 创建计划任务表
-func (d *DatabaseManager) createScheduleTaskTable(now string) (err error) {
-	d.dbLock.Lock()
-	defer d.dbLock.Unlock()
-
-	statement := `CREATE TABLE IF NOT EXISTS ScheduleTask_%s(
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			type VARCHAR(64) NULL,
-			time VARCHAR(64) NULL,
-			status VARCHAR(64) NULL,
-			explain VARCHAR(512) NULL
-			);`
-	_, err = d.db.Exec(fmt.Sprintf(statement, now))
-	if err != nil {
-		logrus.Errorf("create table ScheduleTask_%s fail, error:%s", now, err.Error())
-	}
 	return
 }
 
@@ -282,56 +217,6 @@ func (d *DatabaseManager) createSystemResourceTable(now string) (err error) {
 	_, err = d.db.Exec(fmt.Sprintf(statement, now))
 	if err != nil {
 		logrus.Errorf("create table SystemResource_%s fail, error:%s", now, err.Error())
-	}
-	return
-}
-
-func (d *DatabaseManager) loadDatabase() (err error) {
-
-	// 加载用户信息
-	user, err := loadUserInfo(d)
-	if err == nil {
-		d.user = user
-	}
-	logrus.Infof("user info:%s", user.String())
-	return
-}
-
-// 校验密码是否有效
-func (d *DatabaseManager) processUserCheckMessage(msg message.BaseMessage) (rsp message.BaseResponse, err error) {
-	checkMsg := msg.(*message.UserVerifyMessage)
-	rsp = message.NewBaseResponse(msg)
-	if len(checkMsg.User) <= 0 || len(checkMsg.Password) <= 0 {
-		err = fmt.Errorf("user or password is empty")
-		return
-	}
-
-	// 判断用户名密码是否有效
-	valid := (checkMsg.User == d.user.User) && (checkMsg.Password == d.user.Password)
-	if !valid {
-		err = fmt.Errorf("invalid user or password")
-	}
-	return
-}
-
-// 修改密码
-func (d *DatabaseManager) processChangePasswordMessage(msg message.BaseMessage) (rsp message.BaseResponse, err error) {
-	changeMsg := msg.(*message.ChangePasswordMessage)
-	rsp = message.NewBaseResponse(msg)
-
-	// 判断旧的密码
-	if d.user.Password != changeMsg.OldPassword {
-		err = fmt.Errorf("invalid old password")
-		return
-	}
-
-	// 修改数据库中的密码
-	err = changePassword(d, changeMsg.ChangePassword)
-
-	// 修改内存中的用户名密码
-	if err == nil {
-		d.user.User = changeMsg.User
-		d.user.Password = changeMsg.NewPassword
 	}
 	return
 }
@@ -804,42 +689,6 @@ func (d *DatabaseManager) getMemoryStatisticByTime(begin, end time.Time) (sampli
 		json.Unmarshal([]byte(data), &tmpStat)
 		stat = append(stat, tmpStat)
 	}
-	return
-}
-
-// 获取服务组件的使用情况
-func (d *DatabaseManager) processGetServiceStatisticMessage(msg message.BaseMessage) (rsp message.BaseResponse, err error) {
-	getMsg := msg.(*message.GetServiceStatisticMessage)
-	begin := strings.Trim(getMsg.BeginTime, " ")
-	end := strings.Trim(getMsg.EndTime, " ")
-
-	var times []time.Time
-	var statistic [][]common.ProcessInfo
-	if len(begin) <= 0 && len(end) <= 0 { // 如果begin和end均为空，则返回内存中统计信息
-		times, statistic = d.getServiceStatisticInBuffer()
-	} else if len(begin) > 0 && len(end) > 0 { // 获取指定范围的统计信息
-		beginTime, e := time.Parse("2006-01-02 15:04:05", begin)
-		if e == nil {
-			endTime, e := time.Parse("2006-01-02 15:04:05", end)
-			if e == nil {
-				times, statistic = d.getServiceStatisticByTime(beginTime, endTime)
-			} else {
-				err = e
-			}
-		} else {
-			err = e
-		}
-	} else if len(begin) > 0 && len(end) <= 0 { // 获取最新的统计信息
-		beginTime, e := time.Parse("2006-01-02 15:04:05", begin)
-		if e == nil {
-			times, statistic = d.getServiceStatisticByTime(beginTime, time.Now())
-		} else {
-			err = e
-		}
-	} else {
-		err = fmt.Errorf("invalid request, begin:%s, end:%s", begin, end)
-	}
-	rsp = message.NewGetServiceStatisticResponse(times, statistic, msg)
 	return
 }
 

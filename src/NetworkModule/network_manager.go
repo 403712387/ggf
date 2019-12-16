@@ -14,14 +14,11 @@ import (
 type NetworkManager struct {
 	core.MessageList                     // 消息列表
 	httpService      *common.ServiceInfo //  http服务
-	protobufService  *common.ServiceInfo // protobuf服务
-	desKey           string              // des的密钥
 }
 
 // 初始化
 func (n *NetworkManager) Init() {
 	logrus.Infof("begin %s init", n.ModuleName)
-	n.desKey = "*u9K_/M8"
 	logrus.Infof("end %s init", n.ModuleName)
 }
 

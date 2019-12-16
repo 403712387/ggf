@@ -5,8 +5,6 @@ import (
 	"CommonModule/message"
 	"CoreModule"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
-	"os"
 	"sync"
 	"time"
 )
@@ -47,9 +45,6 @@ func (r *ResourceManager) Uninit() {
 func (r *ResourceManager) BeginWork() {
 	logrus.Infof("begin %s module beginwork", r.ModuleName)
 
-	// 获取各个服务组件的名称（在获取资源使用的loop种，或获取各个服务组件的资源使用情况）
-	go r.getServiceNameLoop()
-
 	// cpu使用情况采集
 	go r.cpuStatisticLoop(0)
 
@@ -87,8 +82,6 @@ func (r *ResourceManager) OnForeseeMessage(msg message.BaseMessage) (done bool) 
 		r.processSomeoneIsLooking()
 	case *message.GetNetworkStatisticMessage:
 		r.processSomeoneIsLooking()
-	case *message.GetServiceStatisticMessage:
-		r.processSomeoneIsLooking()
 	}
 	return
 }
@@ -96,14 +89,6 @@ func (r *ResourceManager) OnForeseeMessage(msg message.BaseMessage) (done bool) 
 // 处理消息
 func (r *ResourceManager) OnProcessMessage(msg message.BaseMessage) (rsp message.BaseResponse, err error) {
 	switch msg.(type) {
-	case *message.PartitionInfoMessage:  //磁盘消息
-		return r.processGetDiskInfoMessage(msg)
-	case *message.OperationDiskMessage:  //磁盘操作消息
-		return r.processOperationDiskMessage(msg)
-	case *message.UpdateMapModeMessage: //修改地图模式的消息
-		return r.processUpdateMapModeMessage(msg)
-	case *message.GetMapModeInfoMessage: //获取地图模式的消息
-		return r.processGetMapModeInfoMessage(msg)
 	}
 	return nil, nil
 }
@@ -272,35 +257,6 @@ func (r *ResourceManager) ServiceStatisticLoop(index int) {
 	logrus.Infof("end disk statistic loop")
 }
 
-func (r *ResourceManager) getServiceNameLoop() {
-	logrus.Infof("begin get service name loop")
-	for {
-		// 发送消息，获取所有的服务组件信息
-		msg := message.NewServiceInfoMessage(common.Priority_First, message.Trans_Sync)
-		rsp, err := r.SendMessage(msg)
-		if err != nil {
-			logrus.Errorf("get service info fail, error: %s", err.Error())
-			continue
-		}
-
-		// 处理服务组件的信息
-		serviceRsp := rsp.(*message.ServiceInfoResponse)
-		serviceInfo := serviceRsp.Info.Service
-		name := make(map[string]bool)
-		for _, service := range serviceInfo {
-			name[service.Name] = true
-		}
-
-		// 更新service
-		r.ServiceLock.Lock()
-		r.Service = name
-		r.ServiceLock.Unlock()
-
-		time.Sleep(300 * time.Second)
-	}
-	logrus.Infof("end get service name loop")
-}
-
 // 修改采样频率的线程
 func (r *ResourceManager) changeSamplingRateLoop() {
 	logrus.Infof("begin change sampling rate loop")
@@ -325,68 +281,4 @@ func (r *ResourceManager) changeSamplingRateLoop() {
 		}
 	}
 	logrus.Infof("end change sampling rate loop")
-}
-
-//处理磁盘信息的消息
-func (r *ResourceManager) processGetDiskInfoMessage(msg message.BaseMessage) (rsp message.BaseResponse, err error) {
-	logrus.Infof("begin get disk info loop")
-	disk, err := statusDisk()
-	if err == nil {
-		rsp = message.NewDiskInfoResponse(disk, msg)
-	} else {
-		logrus.Errorf("get disk info fail, error:%s", err.Error())
-	}
-	return
-}
-
-//处理挂载磁盘的消息
-func (r *ResourceManager) processOperationDiskMessage(msg message.BaseMessage) (rsp message.BaseResponse, err error) {
-	logrus.Infof("Begin processing operate disk")
-	opertionMsg := msg.(*message.OperationDiskMessage)
-	rsp = message.NewBaseResponse(msg)
-	err = operateDiskMount(opertionMsg.Partitions)
-	if err != nil {
-		logrus.Errorf("operate disk fail, error:%s", err.Error())
-	}
-	return
-}
-
-//处理地图模式的消息
-func (r *ResourceManager) processUpdateMapModeMessage(msg message.BaseMessage) (rsp message.BaseResponse, err error) {
-	logrus.Infof("Begin processing update map mode")
-	mapInfoMsg := msg.(*message.UpdateMapModeMessage)
-	rsp = message.NewBaseResponse(msg)
-
-	// 如果文件已经存在，则删除
-	if common.IsExist(mapInfoMsg.FileName) {
-		os.Remove(mapInfoMsg.FileName)
-	}
-
-	//  创建文件
-	err = ioutil.WriteFile(mapInfoMsg.FileName, mapInfoMsg.FileData, os.ModePerm)
-	if err != nil {
-		logrus.Errorf("update %s fail, error reason:%s", mapInfoMsg.FileName, err.Error())
-		return
-	}
-
-	//进行地图压缩包解压
-	logrus.Infof("begin unzip %s", mapInfoMsg.FileName)
-	err = updateMapMode(mapInfoMsg.Info.Mode)
-	if err != nil {
-		logrus.Errorf("update map mode fail, error:%s", err.Error())
-	}
-	return
-}
-
-//获取地图模式的消息
-func (r *ResourceManager) processGetMapModeInfoMessage(msg message.BaseMessage) (rsp message.BaseResponse, err error) {
-	logrus.Infof("begin get map mode info")
-	info, err := getMapMode()
-	logrus.Info("getMapMode %s:", info)
-	if err == nil {
-		rsp = message.NewMapModeInfoResponse(info, msg)
-	} else {
-		logrus.Errorf("get map mode info fail, error:%s", err.Error())
-	}
-	return
 }

@@ -71,7 +71,7 @@ func (c *ConfigureManager) BeginWork() {
 	logrus.Infof("get configure successful, info:%s", c.configure.String())
 
 	// 发送配置消息
-	hostServiceInfo := common.HostServiceInfo{ServiceInfo: common.ServiceInfo{ServiceType: common.Service_Host, HttpPort: c.configure.HostService.HttpPort}}
+	hostServiceInfo := common.HostServiceInfo{ServiceInfo: common.ServiceInfo{HttpPort: c.configure.HostService.HttpPort}}
 	configMessage := message.NewConfigureMessage(hostServiceInfo, common.Priority_First, message.Trans_Sync)
 	c.SendMessage(configMessage)
 

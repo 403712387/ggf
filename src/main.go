@@ -19,7 +19,7 @@ func init() {
 	customFormatter.TimestampFormat = "2006-01-02 15:04:05.000000000"
 	logrus.SetFormatter(customFormatter)
 	logrus.SetOutput(&lumberjack.Logger{
-		Filename:   "./logs/host.log",
+		Filename:   "./logs/ggf.log",
 		MaxSize:    10, // megabytes
 		MaxBackups: 10,
 		MaxAge:     10,    //days
