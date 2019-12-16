@@ -1,0 +1,11 @@
+{
+ "host_service": {
+  "http_port": 6003
+ },
+ "ntp_server": {
+  "ip": "118.24.4.66",
+  "port": 123,
+  "proofread_interval": 60,
+  "enable": true
+ }
+}
