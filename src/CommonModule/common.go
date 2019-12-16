@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -45,6 +46,7 @@ func (priority Priority) String() string {
 
 // ntp 操作类型
 type NtpControlType string
+
 const (
 	Ntp_Control_Test NtpControlType = "test"
 	Ntp_Control_Set  NtpControlType = "set"
@@ -52,9 +54,9 @@ const (
 
 // 服务组件信息
 type ServiceInfo struct {
-	Ip           string      // 服务器的ip
-	Port         int32       // 服务器的普通端口
-	HttpPort     int32       // 服务器的http端口
+	Ip       string // 服务器的ip
+	Port     int32  // 服务器的普通端口
+	HttpPort int32  // 服务器的http端口
 }
 
 func (s *ServiceInfo) String() string {
@@ -69,6 +71,7 @@ type HostServiceInfo struct {
 func (o *HostServiceInfo) String() string {
 	return fmt.Sprintf("%s", o.ServiceInfo.String())
 }
+
 // git信息
 type GitInfo struct {
 	Branch  string `json:"branch"`  // 分支
@@ -127,23 +130,23 @@ func (n *NetworkStatisticInfo) String() string {
 
 // 磁盘统计
 type DiskStatisticInfo struct {
-	Rrqm         	  uint64 `json:"rrqm/s"`
-	Wrqm   		 	  uint64 `json:"wrqm/s"`
-	Read         	  uint64 `json:"r/s"`
-	Write  		 	  uint64 `json:"w/s"`
+	Rrqm              uint64 `json:"rrqm/s"`
+	Wrqm              uint64 `json:"wrqm/s"`
+	Read              uint64 `json:"r/s"`
+	Write             uint64 `json:"w/s"`
 	ReadByte          uint64 `json:"rkB/s"`
 	ReadByteReadable  string `json:"read_byte_readable"`
 	WriteByte         uint64 `json:"wkB/s"`
 	WriteByteReadable string `json:"write_byte_readable"`
 	Avgrq             uint64 `json:"avgrq-sz"`
-	Avgqu         	  uint64 `json:"avgqu-sz"`
-	Await    		  uint64 `json:"await"`
+	Avgqu             uint64 `json:"avgqu-sz"`
+	Await             uint64 `json:"await"`
 	Rawait            uint64 `json:"r_await"`
-	Wawait       	  uint64 `json:"w_await"`
+	Wawait            uint64 `json:"w_await"`
 	Name              string `json:"name"`
 	SerialNumber      string `json:"serialNumber"`
 	Svctm             uint64 `json:"svctm"`
-	Util			  uint64 `json:"util"`
+	Util              uint64 `json:"util"`
 }
 
 func (d *DiskStatisticInfo) String() string {
@@ -447,5 +450,55 @@ func Pow(x uint64, y int) (result uint64) {
 		result = result * x
 	}
 	result = result / 8
+	return
+}
+
+// 获取网络接口的网络带宽
+func NetworkInterfaceBandwidth(network string) (bandwidth uint64, err error) {
+
+	// 执行命令ethtool
+	output, err := CommondResult(fmt.Sprintf("ethtool %s", network))
+	if err != nil {
+		logrus.Errorf("get %s bandwidth fail, error %s", err.Error())
+		return
+	}
+
+	// 从ethtool命令中找到网口速率字段
+	lines := strings.Split(output, "\n")
+	for _, line := range lines {
+		line = strings.Trim(line, " ")
+		line = strings.Trim(line, "\t")
+		if strings.Index(line, "Speed") < 0 {
+			continue
+		}
+		prefixIndex := strings.Index(line, ":")
+		suffixIndex := strings.Index(line, "/")
+		if prefixIndex >= 0 && suffixIndex >= 0 {
+			speed := strings.Trim(line[prefixIndex+1:suffixIndex], " ")
+			bandwidth, err = convertBandwidth(speed)
+		}
+		return
+	}
+	err = fmt.Errorf("fail")
+	return
+}
+
+// 转换带宽(把字符串,比如100M改为以byte为单位的数字)
+func convertBandwidth(bandwidth string) (result uint64, err error) {
+	util := [...]string{"B", "K", "M", "G", "T", "P", "E", "Z", "Y"}
+	for i := 0; i < len(util); i++ {
+		index := strings.Index(bandwidth, util[i])
+		if index >= 0 {
+			base, e := strconv.ParseInt(bandwidth[:index], 10, 64)
+			err = e
+			if err != nil {
+				return
+			}
+
+			result = uint64(base) * Pow(1024, i)
+			return
+		}
+	}
+	err = fmt.Errorf("invalid bandwidth")
 	return
 }
