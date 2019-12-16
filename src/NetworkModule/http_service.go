@@ -165,34 +165,6 @@ func (h *HttpService) processHttp(w http.ResponseWriter, req *http.Request) {
 		response = h.index(&body)
 	case "/host/help": // 帮助页面
 		response = h.help(&body)
-	case "/host/get/hardware/info": // 获取硬件信息
-		response = h.hardwareInfo(&body)
-	case "/host/get/server/status": // 获取服务器运行状态
-		response = h.serverStatus(&body)
-	case "/host/get/service/status": // 获取服务组件运行状态
-		response = h.serviceStatus(&body)
-	case "/host/get/service/info": // 获取服务组件的信息(服务组件个数，版本等）
-		response = h.serviceInfo(&body)
-	case "/host/get/service/info/help":
-		response = h.serviceInfoHelp(&body)
-	case "/host/get/server/id": // 获取机器标识码(为了生成license)
-		response = h.serverID(&body)
-	case "/host/get/server/id/help":
-		response = h.serverIDHelp(&body)
-	case "/host/update/license/help":
-		response = h.updateLicenseHelp(&body)
-	case "/host/get/license": // 获取license信息(支持接入的设备数，是否有效，过期时间等)
-		response = h.licenseInfo(&body)
-	case "/host/get/license/help":
-		response = h.licenseInfoHelp(&body)
-	case "/host/remove/image": // 删除某一天的图片或者某一张图片
-		response = h.removeImage(&body)
-	case "/host/update/service/help":
-		response = h.updateServiceHelp(&body)
-	case "/host/get/hostinfo": // 获取 /etc/hosts里面的配置
-		response = h.hostInfo(&body)
-	case "/host/update/hostinfo": // 更新 /etc/hosts中的配置
-		response = h.updateHostInfo(&body)
 	case "/host/get/ntp": // 获取ntp配置信息
 		response = h.ntpServerInfo(&body)
 	case "/host/get/ntp/help":
@@ -205,10 +177,6 @@ func (h *HttpService) processHttp(w http.ResponseWriter, req *http.Request) {
 		response = h.serverOperate(&body)
 	case "/host/operate/server/help":
 		response = h.serverOperateHelp(&body)
-	case "/host/operate/service": // 控制服务组件(重启，停止等)
-		response = h.serviceOperate(&body)
-	case "/host/operate/service/help":
-		response = h.serviceOperateHelp(&body)
 	case "/host/get/server/log": // 查看服务器的系统日志
 		response = h.getServerLog(&body)
 	case "/host/get/server/log/help":
@@ -221,28 +189,10 @@ func (h *HttpService) processHttp(w http.ResponseWriter, req *http.Request) {
 		response = h.getServiceLog(&body)
 	case "/host/get/service/log/help":
 		response = h.getServiceLogHelp(&body)
-	case "/host/download/service/log": // 下载服务组件的系统日志
-		response = h.downloadServiceLog(&body)
-	case "/host/download/service/log/help":
-		response = h.downloadServiceLogHelp(&body)
-	case "/host/get/network/configure": // 获取网络配置
-		response = h.networkConfigure(&body, req.Host)
-	case "/host/get/network/configure/help":
-		response = h.networkConfigureHelp(&body)
-	case "/host/update/network/configure": // 更新网络配置
-		response = h.updateNetworkConfigure(&body)
 	case "/host/update/network/configure/help":
 		response = h.updateNetworkConfigureHelp(&body)
 	case "/host/login/service/help":
 		response = h.loginServiceHelp(&body)
-	case "/host/logout/service": // 退出登陆
-		response = h.logoutService(&body, token)
-	case "/host/logout/service/help":
-		response = h.logoutServiceHelp(&body)
-	case "/host/change/password": // 修改登陆密码
-		response = h.changePassword(&body)
-	case "/host/change/password/help":
-		response = h.changePasswordHelp(&body)
 	case "/host/get/time": // 获取本机时间
 		response = h.getTime(&body)
 	case "/host/get/time/help":
@@ -251,20 +201,6 @@ func (h *HttpService) processHttp(w http.ResponseWriter, req *http.Request) {
 		response = h.updateTime(&body)
 	case "/host/update/time/help":
 		response = h.updateTimeHelp(&body)
-	case "/host/get/time/zones/info": // 获取时区信息
-		response = h.timeZonesInfo(&body)
-	case "/host/get/time/zones/info/help":
-		response = h.timeZonesInfoHelp(&body)
-	case "/host/get/server/time/zone": // 获取服务器的时区
-		response = h.serverTimeZone(&body)
-	case "/host/get/server/time/zone/help":
-		response = h.serverTimeZoneHelp(&body)
-	case "/host/update/server/time/zone": // 更新时区信息
-		response = h.updateTimeZone(&body)
-	case "/host/update/server/time/zone/help":
-		response = h.updateTimeZoneHelp(&body)
-	case "/host/get/token": // 查看所有token
-		response = h.getToken(&body)
 	case "/host/stop": // 停止进程
 		response = h.stop(&body)
 	case "/host/get/time/info/page": // 时间信息的页面
@@ -313,28 +249,10 @@ func (h *HttpService) processHttp(w http.ResponseWriter, req *http.Request) {
 		response = h.setDebugInfo(&body)
 	case "/host/get/debug/info": // 获取调试配置
 		response = h.getDebugInfo(&body)
-	case "/host/operate/disk": // 操作磁盘格式化挂载
-		response = h.operationDisk(&body)
-	case "/host/operate/disk/help":
-		response = h.operationDiskHelp(&body)
-	case "/host/encrypt/des": // des进行加密
-		response = h.encryptDES(&body)
-	case "/host/encrypt/des/help":
-		response = h.encrpytDESHelp(&body)
-	case "/host/decrypt/des": // des进行解密
-		response = h.decryptDES(&body)
 	case "/host/decrypt/des/help":
 		response = h.decryptDESHelp(&body)
 	case "/host/send/kafka/message":
 		response = h.sendKafkaMessage(&body)
-	case "/host/update/kafka/config":   //更新kafka配置文件
-		response = h.updateKafkaConfig(&body)
-	case "/host/update/kafka/config/help":
-		response = h.updateKafkaConfigHelp(&body)
-	case "/host/get/kafka/config":   //获取kafka配置文件
-		response = h.kafkaConfigInfo(&body)
-	case "/host/get/map/mode":   //获取地图模式
-		response = h.mapModeInfo(&body)
 	default:
 		response = h.response(404, "not find processor of path "+req.URL.Path)
 	}

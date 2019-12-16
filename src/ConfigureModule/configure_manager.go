@@ -20,16 +20,10 @@ type ConfigureManager struct {
 	configure        ConfigureJson // 配置内容
 }
 
-type StorageConfigure struct {
-	RemoveThreshold int64    `json:"remove_threshold"` // 删除图片的阈值
-	LastRemove      []string `json:"last_remove"`      // 最后一次删除的图片
-}
-
 // json配置
 type ConfigureJson struct {
 	HostService HostServiceJson  `json:"host_service"` // host name
 	NtpServer   common.NTPInfo   `json:"ntp_server"`
-	Storage     StorageConfigure `json:"storage"` // 关于存储的配置
 }
 
 func (c *ConfigureJson) String() string {
@@ -38,11 +32,10 @@ func (c *ConfigureJson) String() string {
 
 type HostServiceJson struct {
 	HttpPort     int32 `json:"http_port"`     // http port
-	ProtobufPort int32 `json:"protobuf_port"` // protobuf port
 }
 
 func (h *HostServiceJson) String() string {
-	return fmt.Sprintf("http port:%d, protobuf port:%d", h.HttpPort, h.ProtobufPort)
+	return fmt.Sprintf("http port:%d", h.HttpPort)
 }
 
 // 初始化
@@ -78,7 +71,7 @@ func (c *ConfigureManager) BeginWork() {
 	logrus.Infof("get configure successful, info:%s", c.configure.String())
 
 	// 发送配置消息
-	hostServiceInfo := common.HostServiceInfo{ServiceInfo: common.ServiceInfo{ServiceType: common.Service_Host, HttpPort: c.configure.HostService.HttpPort, ProtobufPort: c.configure.HostService.ProtobufPort}}
+	hostServiceInfo := common.HostServiceInfo{ServiceInfo: common.ServiceInfo{ServiceType: common.Service_Host, HttpPort: c.configure.HostService.HttpPort}}
 	configMessage := message.NewConfigureMessage(hostServiceInfo, common.Priority_First, message.Trans_Sync)
 	c.SendMessage(configMessage)
 
@@ -86,9 +79,6 @@ func (c *ConfigureManager) BeginWork() {
 	ntpMsg := message.NewUpdateNtpConfigureMessage(c.configure.NtpServer, common.Ntp_Control_Set, common.Priority_Third, message.Trans_Async)
 	c.SendMessage(ntpMsg)
 
-	// 发送删除阈值的消息
-	storageMsg := message.NewStorageConfigureMessage(common.StorageConfigure{RemoveThreshold: c.configure.Storage.RemoveThreshold}, common.Priority_Fifth, message.Trans_Async)
-	c.SendMessage(storageMsg)
 	logrus.Infof("end %s beginwork", c.ModuleName)
 }
 
@@ -110,12 +100,6 @@ func (c *ConfigureManager) OnForeseeMessage(msg message.BaseMessage) (done bool)
 // 处理消息
 func (c *ConfigureManager) OnProcessMessage(msg message.BaseMessage) (rsp message.BaseResponse, err error) {
 	switch msg.(type) {
-	case *message.StorageConfigureMessage: // 删除图片的阈值
-		c.processStorageConfigureMessage(msg)
-	case *message.RemoveStorageMessage: // 删除图片
-		c.processRemoveStorageMessage(msg)
-	case *message.GetStorageConfigureMessage: // 查询存储的配置
-		return c.processGetStorageConfigureMessage(msg)
 	}
 	return nil, nil
 }
@@ -139,34 +123,6 @@ func (c *ConfigureManager) foreseeUpdateNtpConfigureMessage(msg message.BaseMess
 		c.configure.NtpServer = ntpMsg.NTPInfo
 		c.saveConfigure()
 	}
-}
-
-//处理存储配置的消息
-func (c *ConfigureManager) processStorageConfigureMessage(msg message.BaseMessage) {
-
-	// 获取配置
-	storageMsg := msg.(*message.StorageConfigureMessage)
-	c.configure.Storage.RemoveThreshold = storageMsg.StorageConfigure.RemoveThreshold
-
-	// 保存到配置文件中
-	c.saveConfigure()
-}
-
-// 删除存储的消息
-func (c *ConfigureManager) processRemoveStorageMessage(msg message.BaseMessage) {
-
-	// 获取日期
-	removeMsg := msg.(*message.RemoveStorageMessage)
-	c.configure.Storage.LastRemove = removeMsg.Time
-
-	// 保存到配置文件中
-	c.saveConfigure()
-}
-
-// 获取存储的配置
-func (c *ConfigureManager) processGetStorageConfigureMessage(msg message.BaseMessage) (rsp message.BaseResponse, err error) {
-	rsp = message.NewGetStorageConfigureResponse(common.StorageConfigure{RemoveThreshold: c.configure.Storage.RemoveThreshold}, c.configure.Storage.LastRemove, msg)
-	return
 }
 
 //  配置写入json文件
