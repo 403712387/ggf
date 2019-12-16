@@ -15,7 +15,7 @@ var (
 )
 
 /*
-本模块主要负责host服务的信息，比如启动时间，git信息等
+本模块主要负责ggf服务的信息，比如启动时间，git信息等
 */
 
 type HostServiceManager struct {

@@ -22,19 +22,19 @@ type ConfigureManager struct {
 
 // json配置
 type ConfigureJson struct {
-	HostService HostServiceJson  `json:"host_service"` // host name
-	NtpServer   common.NTPInfo   `json:"ntp_server"`
+	HostService GgfServiceJson `json:"ggf_service"` // host name
+	NtpServer   common.NTPInfo `json:"ntp_server"`
 }
 
 func (c *ConfigureJson) String() string {
 	return fmt.Sprintf("host service info:%s", c.HostService.String())
 }
 
-type HostServiceJson struct {
-	HttpPort     int32 `json:"http_port"`     // http port
+type GgfServiceJson struct {
+	HttpPort int32 `json:"http_port"` // http port
 }
 
-func (h *HostServiceJson) String() string {
+func (h *GgfServiceJson) String() string {
 	return fmt.Sprintf("http port:%d", h.HttpPort)
 }
 

@@ -83,29 +83,29 @@ func (h *HttpService) processHttp(w http.ResponseWriter, req *http.Request) {
 	logrus.Infof("http request, url:%s, body:%s", req.URL.Path, body)
 
 	switch req.URL.Path {
-	case "/host/index": // index页面
+	case "/index": // index页面
 		response = h.index(&body)
-	case "/host/get/ntp": // 获取ntp配置信息
+	case "/get/ntp": // 获取ntp配置信息
 		response = h.ntpServerInfo(&body)
-	case "/host/update/ntp": // 更新ntp配置信息
+	case "/update/ntp": // 更新ntp配置信息
 		response = h.updateNtpServerInfo(&body)
-	case "/host/get/time": // 获取本机时间
+	case "/get/time": // 获取本机时间
 		response = h.getTime(&body)
-	case "/host/update/time": // 修改本机时间
+	case "/update/time": // 修改本机时间
 		response = h.updateTime(&body)
-	case "/host/service/info": // 获取host服务的信息
+	case "/service/info": // 获取ggf服务的信息
 		response = h.hostServiceInfo(&body)
-	case "/host/get/cpu/statistic": // 获取cpu的使用情况
+	case "/get/cpu/statistic": // 获取cpu的使用情况
 		response = h.getCpuStatistic(&body)
-	case "/host/get/disk/statistic": // 获取磁盘的使用情况
+	case "/get/disk/statistic": // 获取磁盘的使用情况
 		response = h.getDiskStatistic(&body)
-	case "/host/get/network/statistic": // 获取网络的使用情况
+	case "/get/network/statistic": // 获取网络的使用情况
 		response = h.getNetworkStatistic(&body)
-	case "/host/get/memory/statistic": // 获取内存络的使用情况
+	case "/get/memory/statistic": // 获取内存络的使用情况
 		response = h.getMemoryStatistic(&body)
-	case "/host/set/debug/info": // 修改调试配置
+	case "/set/debug/info": // 修改调试配置
 		response = h.setDebugInfo(&body)
-	case "/host/get/debug/info": // 获取调试配置
+	case "/get/debug/info": // 获取调试配置
 		response = h.getDebugInfo(&body)
 	default:
 		response = h.response(404, "not find processor of path "+req.URL.Path)
@@ -231,7 +231,7 @@ func (h *HttpService) hostServiceInfo(body *string) (data []byte) {
 	if err == nil {
 		rsp := struct {
 			Startup struct {
-				HostService string `json:"host_service"`
+				HostService string `json:"ggf_service"`
 				System      string `json:"system"`
 			} `json:"startup"`
 
