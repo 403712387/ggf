@@ -57,9 +57,6 @@ func (r *ResourceManager) BeginWork() {
 	// 硬盘使用情况采集
 	go r.DiskStatisticLoop(3)
 
-	// 服务组件资源使用情况采集
-	go r.ServiceStatisticLoop(4)
-
 	// 修改采样频率的线程
 	go r.changeSamplingRateLoop()
 	logrus.Infof("end %s module beginwork", r.ModuleName)
@@ -210,39 +207,6 @@ func (r *ResourceManager) DiskStatisticLoop(index int) {
 			r.SendMessage(msg)
 		} else {
 			logrus.Errorf("statistic disk fail, error:%s", err.Error())
-		}
-
-		// 休眠
-		select {
-		case <-time.After(time.Duration(r.SamplingRate)*time.Second - (time.Since(begin))):
-			continue
-		case data := <-r.notify[index]:
-			logrus.Infof("%d change sampling rate, %s", index, data)
-			continue
-		}
-	}
-	logrus.Infof("end disk statistic loop")
-}
-
-// 服务组件资源使用情况采集
-func (r *ResourceManager) ServiceStatisticLoop(index int) {
-	logrus.Infof("begin disk statistic loop")
-	for {
-		// 获取服务组件的资源使用情况
-		begin := time.Now()
-		r.ServiceLock.RLock()
-		services := r.Service
-		r.ServiceLock.RUnlock()
-		if len(services) <= 0 {
-			continue
-		}
-
-		processes, err := statisticProcess(services)
-		if err == nil {
-			msg := message.NewServiceStatisticMessage(time.Now(), processes, common.Priority_Third, message.Trans_Async)
-			r.SendMessage(msg)
-		} else {
-			logrus.Errorf("statistic service use resource fail, error:%s", err.Error())
 		}
 
 		// 休眠
